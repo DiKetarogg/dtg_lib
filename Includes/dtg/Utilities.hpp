@@ -8,5 +8,7 @@
 #include "dtg/Utilities/RawStack.hpp"
 #include "dtg/Utilities/RawArray.hpp"
 #include "dtg/Utilities/Spaceship.hpp"
+#include "dtg/Utilities/Swap.hpp"
+#include "dtg/Utilities/Sort.hpp"
 #endif
 

@@ -110,7 +110,8 @@ cl: clear_console
 clall: clear_console all
 
 fclean: clean
-	rm -rf ${COMPILE_DIR}
+	rm -rf ${TARGET_DIR}
+	rm -rf $(OBJS)
 re: fclean all
 
 remake: re
