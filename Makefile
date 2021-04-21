@@ -39,7 +39,7 @@ HEADER_EXT	=.hpp
 CC		=g++-10 -std=c++14 -o2
 CFLAGS		=-Wextra -Wall -Werror -Wno-parentheses #-Wno-error=parentheses
 DEBUG_FLAGS	=-g3
-DEBUG_PROGRAM	=gdb
+DEBUG_PROGRAM	=gdb --tui
 #*
 #* ************************************************************************** *#
 #*                              Additional commands                           *#

@@ -74,19 +74,35 @@ void CheckSwap() {
 	"test two(2): " << (j == 2);
 }
 
+void printArray(size_t* array, size_t length) {
+	if (length != 0)
+		std::cout << array[0];
+	for (size_t i = 1; i != length; ++i)
+		std::cout << ", " << array[i];
+	std::cout << "\n\n\n";
+}
+
 void CheckMergeSort() {
 	size_t array[] = {1,2,3,4,5,6,7,8,9,10};
 	size_t array2[] = {10,2,5,3,6,7,1,4,9,8};
 	size_t array3[] = {10,2,2,3,6,10,1,1,9,1};
+	size_t array4[] = {4161,74,69,93,63,1,5,28,49,37,34,85,56,55,52,3,20,79,3,83,67,58,40,32,89,95,57,16,20,20,39,
+};
 	auto Compare = [](const size_t& first, const size_t& second)->bool{
 		return first < second;
 		};
-	auto Swap = [](size_t& first, size_t& second)->void {
-		dtg::Swap(first,second);
-		};
-	dtg::MergeSort<size_t>(array, 10, Compare, Swap);
-	dtg::MergeSort<size_t>(array2, 10, Compare, Swap);
-	dtg::MergeSort<size_t>(array3, 10, Compare, Swap);
+	printArray(array, sizeof(array) / sizeof(size_t));
+	dtg::MergeSort<size_t>(array, 10, Compare);
+	printArray(array, sizeof(array) / sizeof(size_t));
+	printArray(array2, sizeof(array2) / sizeof(size_t));
+	dtg::MergeSort<size_t>(array2, 10, Compare);
+	printArray(array2, sizeof(array2) / sizeof(size_t));
+	printArray(array3, sizeof(array3) / sizeof(size_t));
+	dtg::MergeSort<size_t>(array3, 10, Compare);
+	printArray(array3, sizeof(array3) / sizeof(size_t));
+	printArray(array4, sizeof(array4) / sizeof(size_t));
+	dtg::MergeSort<size_t>(array4, sizeof(array4) / sizeof(size_t), Compare);
+	printArray(array4, sizeof(array4) / sizeof(size_t));
 }
 
 int main () {
