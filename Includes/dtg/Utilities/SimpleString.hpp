@@ -101,10 +101,22 @@ namespace dtg {
 				m_String[length - 1] = 0;
 			}
 
-			void Set(const_pointer str) {
+			auto Set(const_pointer str) {
 				return operator=(str);
 			}
 
+			template<class... Args>
+			BasicSimpleString& Append(Args... args) {
+				size_t size = 1 + CalculateAppendSize(args...);
+				if (!size)
+					return *this;
+				pointer tempHolder = m_String;
+				m_String = new value_type[size];
+				if (m_String)
+					AppendRecursively(m_String, tempHolder, args...);
+				delete[] tempHolder;
+				return *this;
+			}
 			DTG_SPACESHIP_OPERATOR(ArrayCompare(m_String, second),
 					value_type(0), pointer second)
 
@@ -120,7 +132,36 @@ namespace dtg {
 			}
 
 		private:
-
+			size_t CalculateAppendSize(void) {
+				return 0;	
+			}
+			template<class... Args>
+			size_t CalculateAppendSize(const_pointer string, Args... args) {
+				return countElems(string) + CalculateAppendSize(args...);
+			}
+			template<class... Args>
+			size_t CalculateAppendSize(const BasicSimpleString& string, Args... args) {
+				return countElems(string.m_String) + CalculateAppendSize(args...);
+			}
+			void AppendRecursively(pointer) {
+				return;
+			}
+			template<class... Args>
+			void AppendRecursively(pointer container,
+			const BasicSimpleString& string, Args... args) {
+				return AppendRecursively
+				(dtg::TerminatedArrayCopyLast(container, string.m_String),
+				args...);
+			}
+			template<class... Args>
+			void AppendRecursively(pointer container,
+			const_pointer string, Args... args) {
+				return AppendRecursively
+				(dtg::TerminatedArrayCopyLast(container, string),
+				args...);
+			}
+		private:
+	
 		pointer m_String;
 	};
 	typedef BasicSimpleString<char>		SimpleString;

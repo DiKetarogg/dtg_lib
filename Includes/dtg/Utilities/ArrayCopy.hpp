@@ -23,5 +23,15 @@ namespace dtg {
 			dest[it] = source[it];
 			return dest;
 		}
+	template <class T>
+		T* TerminatedArrayCopyLast (T* dest, const T* source, T terminator = 0) {
+			size_t it = 0;
+			while (source[it] != terminator) {
+				dest[it] = source[it];
+				++it;
+			}
+			dest[it] = source[it];
+			return dest + it;
+		}
 }
 #endif

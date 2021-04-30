@@ -45,7 +45,14 @@ DEBUG_PROGRAM	=gdb --tui
 #*                              Additional commands                           *#
 #* ************************************************************************** *#
 #*
-
+SimpleString: $(TARGET_DIR) $(SRCS_DIR)/SimpleString.test
+	$(TARGET_DIR)/SimpleString.test
+SimpleStringdeb: $(DEBUG_DIR) $(DEBUG_DIR)/deb_SimpleString.test
+	$(DEBUG_PROGRAM) $(DEBUG_DIR)/deb_SimpleString.test
+$(SRCS_DIR)/SimpleString.test:
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(SRCS_DIR)/SimpleString.cpp -o $(TARGET_DIR)/SimpleString.test
+$(DEBUG_DIR)/deb_SimpleString.test:
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS)$(DEBUG_FLAGS) $(SRCS_DIR)/SimpleString.cpp -o $(DEBUG_DIR)/deb_SimpleString.test
 #*
 #* ************************************************************************** *#
 #*                             Do not edit below                              *#
