@@ -106,16 +106,55 @@ namespace dtg {
 			}
 
 			template<class... Args>
-			BasicSimpleString& Append(Args... args) {
-				size_t size = 1 + CalculateAppendSize(args...);
-				if (!size)
+			BasicSimpleString& Append(const_pointer firstArg, Args... args) {
+				size_t size = 1 + CalculateAppendSize(firstArg, args...);
+				if (size == 1)
 					return *this;
 				pointer tempHolder = m_String;
 				m_String = new value_type[size];
 				if (m_String)
-					AppendRecursively(m_String, tempHolder, args...);
+					AppendRecursively(m_String, tempHolder, firstArg, args...);
 				delete[] tempHolder;
 				return *this;
+			}
+
+			template<class... Args>
+			BasicSimpleString& Append(const BasicSimpleString& firstArg, Args... args) {
+				size_t size = 1 + CalculateAppendSize(firstArg, args...);
+				if (size == 1)
+					return *this;
+				pointer tempHolder = m_String;
+				m_String = new value_type[size];
+				if (m_String)
+					AppendRecursively(m_String, tempHolder, firstArg, args...);
+				delete[] tempHolder;
+				return *this;
+			}
+
+			BasicSimpleString& Append(const_pointer const* first,
+			const_pointer const* last) {
+				size_t size = countElems(m_String) + 1;
+				for (pointer* i = const_cast<pointer*>(first); i != last; ++i)
+					size += countElems(*i);
+				if (size == 1)
+					return *this;
+				pointer tempHolder = m_String;
+				m_String = new value_type[size];
+				if (m_String) {
+				pointer l = TerminatedArrayCopyLast(m_String, tempHolder);
+				delete[] tempHolder;
+				for (pointer* i = const_cast<pointer*>(first); i != last; ++i)
+					l = TerminatedArrayCopyLast(l, *i);
+				}
+				else {
+					m_String = tempHolder;
+				}
+				return *this;
+			}
+
+			BasicSimpleString& Append(const BasicSimpleString* first,
+			const BasicSimpleString* last) {
+				return Append(&first->m_String, &last->m_String);
 			}
 			DTG_SPACESHIP_OPERATOR(ArrayCompare(m_String, second),
 					value_type(0), pointer second)
@@ -150,7 +189,7 @@ namespace dtg {
 			void AppendRecursively(pointer container,
 			const BasicSimpleString& string, Args... args) {
 				return AppendRecursively
-				(dtg::TerminatedArrayCopyLast(container, string.m_String),
+				(TerminatedArrayCopyLast(container, string.m_String),
 				args...);
 			}
 			template<class... Args>
