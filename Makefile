@@ -36,7 +36,7 @@ DEBUG_DIR	=bin
 SRCS_EXT	=.cpp
 OBJS_EXT	=.o
 HEADER_EXT	=.hpp
-CC		=g++-10 -std=c++14 -o2
+CC		=g++-10 -std=c++17 -o2
 CFLAGS		=-Wextra -Wall -Werror -Wno-parentheses #-Wno-error=parentheses
 DEBUG_FLAGS	=-g3
 DEBUG_PROGRAM	=gdb --tui
@@ -50,9 +50,21 @@ SimpleString: $(TARGET_DIR) $(SRCS_DIR)/SimpleString.test
 SimpleStringdeb: $(DEBUG_DIR) $(DEBUG_DIR)/deb_SimpleString.test
 	$(DEBUG_PROGRAM) $(DEBUG_DIR)/deb_SimpleString.test
 $(SRCS_DIR)/SimpleString.test:
-	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(SRCS_DIR)/SimpleString.cpp -o $(TARGET_DIR)/SimpleString.test
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(SRCS_DIR)/SimpleString.cxx -o $(TARGET_DIR)/SimpleString.test
 $(DEBUG_DIR)/deb_SimpleString.test:
-	$(CC) -I$(INCLUDE_DIR) $(CFLAGS)$(DEBUG_FLAGS) $(SRCS_DIR)/SimpleString.cpp -o $(DEBUG_DIR)/deb_SimpleString.test
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS)$(DEBUG_FLAGS) $(SRCS_DIR)/SimpleString.cxx -o $(DEBUG_DIR)/deb_SimpleString.test
+
+
+
+Pack: $(TARGET_DIR) $(SRCS_DIR)/Pack.test
+	$(TARGET_DIR)/Pack.test
+Packdeb: $(DEBUG_DIR) $(DEBUG_DIR)/deb_Pack.test
+	$(DEBUG_PROGRAM) $(DEBUG_DIR)/deb_Pack.test
+$(SRCS_DIR)/Pack.test:
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(SRCS_DIR)/Pack.cxx -o $(TARGET_DIR)/Pack.test
+$(DEBUG_DIR)/deb_Pack.test:
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS)$(DEBUG_FLAGS) $(SRCS_DIR)/Pack.cxx -o $(DEBUG_DIR)/deb_Pack.test
+
 #*
 #* ************************************************************************** *#
 #*                             Do not edit below                              *#
