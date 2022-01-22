@@ -1,6 +1,6 @@
 #ifndef DTG_UTILITIES_RAWSTACK
 #define DTG_UTILITIES_RAWSTACK
-#include "dtg/Utilities/PunCast.hpp"
+#include "PunCast.hpp"
 
 #include <stdexcept>
 #define DTG_RAWSTACK_OVERFLOW throw std::runtime_error("dtg::RawStack overflow.")

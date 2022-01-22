@@ -40,7 +40,7 @@ namespace dtg {
 				other.m_String = 0;
 			}
 
-			BasicSimpleString(const_pointer string)
+			explicit BasicSimpleString(const_pointer string)
 				:m_String(new value_type[countElems(string) + 1]) {
 				if (m_String)
 					dtg::TerminatedArrayCopy(m_String, string);
@@ -49,9 +49,11 @@ namespace dtg {
 			}
 
 			BasicSimpleString(const_pointer string, size_t length)
-				:m_String(new value_type[length]) {
-				if (m_String)
+				:m_String(new value_type[length + 1]) {
+				if (m_String) {
 					dtg::ArrayCopy(m_String, string, length);
+					m_String[length] = 0;
+				}
 				else
 					DTG_STRING_OUT_OF_MEMORY;
 			}
@@ -87,11 +89,11 @@ namespace dtg {
 				return *this;
 			}
 			~BasicSimpleString() {
-				delete m_String;
+				delete[] m_String;
 			}
 
 			void Set(const_pointer string, size_t length) {
-				delete m_String;
+				delete[] m_String;
 
 				m_String = new value_type[length];
 				if (m_String)
@@ -156,10 +158,10 @@ namespace dtg {
 			const BasicSimpleString* last) {
 				return Append(&first->m_String, &last->m_String);
 			}
-			DTG_SPACESHIP_OPERATOR(ArrayCompare(m_String, second),
+			DTG_SPACESHIP_OPERATOR(TerminatedArrayCompare(m_String, second),
 					value_type(0), pointer second)
 
-			DTG_SPACESHIP_OPERATOR(ArrayCompare(m_String, other.m_String),
+			DTG_SPACESHIP_OPERATOR(TerminatedArrayCompare(m_String, other.m_String),
 					value_type(0), const BasicSimpleString& other)
 
 			operator const_pointer() const noexcept {
