@@ -13,6 +13,15 @@ namespace dtg {
 			}
 			return dest;
 		}
+
+	template <class T>
+	T* ArrayCopyLast (T* dest, const T* source, size_t size) {
+		while (size) {
+			--size;
+			dest[size] = source[size];
+		}
+		return dest + size;
+	}
 	template <class T>
 		T* TerminatedArrayCopy (T* dest, const T* source, T terminator = 0) {
 			size_t it = 0;
@@ -20,7 +29,7 @@ namespace dtg {
 				dest[it] = source[it];
 				++it;
 			}
-			dest[it] = source[it];
+			//dest[it] = source[it];
 			return dest;
 		}
 	template <class T>
@@ -30,7 +39,7 @@ namespace dtg {
 				dest[it] = source[it];
 				++it;
 			}
-			dest[it] = source[it];
+			//dest[it] = source[it];
 			return dest + it;
 		}
 }

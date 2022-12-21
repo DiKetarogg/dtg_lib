@@ -1,5 +1,6 @@
 #ifndef DTG_UTILITIES_ARRAYCOMPARE_HPP
 #define DTG_UTILITIES_ARRAYCOMPARE_HPP
+#include <cstddef>
 
 namespace dtg {
 

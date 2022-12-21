@@ -2,11 +2,13 @@
 #define DTG_SIMPLESTRING_HPP
 
 #include <stdexcept>
+
 #include "ArrayCopy.hpp"
 #include "ArrayCompare.hpp"
 #include "CountElems.hpp"
 #include "Spaceship.hpp"
 
+//exceptions may be removed in future
 
 #ifndef DTG_NO_EXCEPT
 #define DTG_STRING_OUT_OF_MEMORY throw std::runtime_error("dtg::SimpleString out of memory")
@@ -24,47 +26,73 @@ namespace dtg {
 			using pointer		= value_type*;
 			using const_pointer	= const value_type*;
 		public:
-			BasicSimpleString():m_String(0){}
+			constexpr BasicSimpleString()
+			: m_Length(0)
+			, m_String(0) {}
 
-			BasicSimpleString(const BasicSimpleString& other):
-				m_String(new value_type[countElems(other.m_String) + 1]) {
-				if (m_String)
-					dtg::TerminatedArrayCopy(m_String, other.m_String);
-				else
+			template<class Iterator>
+			BasicSimpleString(Iterator begin, Iterator end)
+				: m_Length(CalculateSize(begin, end))
+				, m_String(new value_type[m_Length + 1]) {
+				if (m_String) {
+					pointer l = m_String;
+					for (Iterator i = begin; i != end; ++i)
+						l = ArrayCopyLast(l, static_cast<const_pointer>(*i), i->m_Length);
+					m_String[m_Length] = 0;
+				}
+				else {
 					DTG_STRING_OUT_OF_MEMORY;
+				}
+			}
 
+			BasicSimpleString(const BasicSimpleString& other)
+				: m_Length(countElems(other.m_String))
+				, m_String(new value_type[m_Length + 1]) {
+				if (m_String) {
+					m_String[m_Length] = 0;
+					TerminatedArrayCopy(m_String, other.m_String);
+				}
+				else {
+					DTG_STRING_OUT_OF_MEMORY;
+					m_Length = 0;
+				}
 			}
 
 			BasicSimpleString(BasicSimpleString&& other) noexcept
-				:m_String(other.m_String) {
+				: m_Length(other.m_Length)
+				, m_String(other.m_String) {
 				other.m_String = 0;
 			}
 
-			explicit BasicSimpleString(const_pointer string)
-				:m_String(new value_type[countElems(string) + 1]) {
-				if (m_String)
-					dtg::TerminatedArrayCopy(m_String, string);
-				else
+			/*explicit*/ BasicSimpleString(const_pointer string)
+				: m_Length(countElems(string))
+				, m_String(new value_type[m_Length + 1]) {
+				if (m_String) {
+					*TerminatedArrayCopyLast(m_String, string) = 0;
+				}
+				else {
 					DTG_STRING_OUT_OF_MEMORY;
+					m_Length = 0;
+				}
 			}
 
 			BasicSimpleString(const_pointer string, size_t length)
-				:m_String(new value_type[length + 1]) {
+				: m_Length(length)
+				, m_String(new value_type[length + 1]) {
 				if (m_String) {
-					dtg::ArrayCopy(m_String, string, length);
+					ArrayCopy(m_String, string, length);
 					m_String[length] = 0;
 				}
-				else
+				else {
 					DTG_STRING_OUT_OF_MEMORY;
+					m_Length = 0;
+				}
 			}
 
-
 			BasicSimpleString& operator = (const BasicSimpleString& other) {
-				m_String = new value_type[countElems(other.m_String) + 1];
-				if (m_String)
-					dtg::TerminatedArrayCopy(m_String, other.m_String);
-				else
-					DTG_STRING_OUT_OF_MEMORY;
+				if (!Reallocate(other.m_Length))
+					return *this;
+				*TerminatedArrayCopyLast(m_String, other.m_String) = 0;
 				return *this;
 			}
 
@@ -73,96 +101,123 @@ namespace dtg {
 					delete[] m_String;
 
 					m_String = other.m_String;
+					m_Length = other.m_Length;
+					other.m_Length = 0;
 					other.m_String = 0;
 				}
 				return *this;
 			}
 
 			BasicSimpleString& operator = (const_pointer string) {
-				delete[] m_String;
-				m_String = new value_type[countElems(string) + 1];
-				if (m_String)
-					dtg::TerminatedArrayCopy(m_String, string);
-				else
-					DTG_STRING_OUT_OF_MEMORY;
-
+				if (!Reallocate(countElems(string)))
+					return *this;
+				*TerminatedArrayCopy(m_String, string) = 0;
 				return *this;
-			}
-			~BasicSimpleString() {
-				delete[] m_String;
 			}
 
 			void Set(const_pointer string, size_t length) {
-				delete[] m_String;
-
-				m_String = new value_type[length];
-				if (m_String)
-					dtg::ArrayCopy(m_String, string, length);
-				else
-					DTG_STRING_OUT_OF_MEMORY;
-				m_String[length - 1] = 0;
+				if (!Reallocate(length))
+					return;
+				dtg::ArrayCopy(m_String, string, length);
+				m_String[m_Length] = 0;
 			}
 
-			auto Set(const_pointer str) {
+			inline BasicSimpleString& Set(const_pointer str) {
 				return operator=(str);
 			}
 
-			template<class... Args>
-			BasicSimpleString& Append(const_pointer firstArg, Args... args) {
-				size_t size = 1 + CalculateAppendSize(firstArg, args...);
-				if (size == 1)
+			inline const_pointer Get() const {
+				return m_String;
+			}
+
+			inline pointer Get() {
+				return m_String;
+			}
+
+			inline size_t Length() const {
+				return m_Length;
+			}
+
+			BasicSimpleString& Append(const_pointer* begin,
+			const_pointer* end) {
+				size_t size = 0;
+				for (const_pointer* i = begin; i != end; ++i)
+					size += countElems(*i);
+				if (!size)
 					return *this;
-				pointer tempHolder = m_String;
-				m_String = new value_type[size];
-				if (m_String)
-					AppendRecursively(m_String, tempHolder, firstArg, args...);
-				delete[] tempHolder;
-				return *this;
+				return AppendIterator(begin, end, size + m_Length);
+			}
+
+			BasicSimpleString& Append(const BasicSimpleString* begin,
+			const BasicSimpleString* end) {
+				size_t size = 0;
+				for (const BasicSimpleString* i = begin; i != end; ++i)
+					size += i->m_Length;
+				if (!size)
+					return *this;
+				return AppendIterator(begin, end, size + m_Length);
+			}
+
+			template<class Iterator>
+			BasicSimpleString& Append(Iterator begin, Iterator end) {
+				size_t size = 0;
+				for (Iterator i = begin; i != end; ++i)
+					size += i->m_Length;
+				if (!size)
+					return *this;
+				return AppendIterator(begin, end, size + m_Length);
 			}
 
 			template<class... Args>
 			BasicSimpleString& Append(const BasicSimpleString& firstArg, Args... args) {
-				size_t size = 1 + CalculateAppendSize(firstArg, args...);
-				if (size == 1)
+				size_t size = CalculateAppendSize(firstArg, args...) + m_Length;
+				if (size == m_Length)
 					return *this;
 				pointer tempHolder = m_String;
-				m_String = new value_type[size];
-				if (m_String)
-					AppendRecursively(m_String, tempHolder, firstArg, args...);
-				delete[] tempHolder;
-				return *this;
-			}
-
-			BasicSimpleString& Append(const_pointer const* first,
-			const_pointer const* last) {
-				size_t size = countElems(m_String) + 1;
-				for (pointer* i = const_cast<pointer*>(first); i != last; ++i)
-					size += countElems(*i);
-				if (size == 1)
-					return *this;
-				pointer tempHolder = m_String;
-				m_String = new value_type[size];
+				m_String = new value_type[size + 1];
 				if (m_String) {
-				pointer l = TerminatedArrayCopyLast(m_String, tempHolder);
-				delete[] tempHolder;
-				for (pointer* i = const_cast<pointer*>(first); i != last; ++i)
-					l = TerminatedArrayCopyLast(l, *i);
+					if (tempHolder) {
+						AppendRecursively(m_String, tempHolder, firstArg, args...);
+						delete[] tempHolder;
+					}
+					else
+						AppendRecursively(m_String, firstArg, args...);
+					m_String[size] = 0;
+					m_Length = size;
 				}
 				else {
+					DTG_STRING_OUT_OF_MEMORY;
+					m_String = tempHolder;
+				}
+				return *this;
+			}
+			template<class... Args>
+			BasicSimpleString& Append(const_pointer firstArg, Args... args) {
+				size_t size = CalculateAppendSize(firstArg, args...) + m_Length;
+				if (size == m_Length)
+					return *this;
+				pointer tempHolder = m_String;
+				m_String = new value_type[size + 1];
+				if (m_String) {
+					AppendRecursively(m_String, tempHolder, firstArg, args...);
+					m_String[size] = 0;
+					m_Length = size;
+					delete[] tempHolder;
+				}
+				else {
+					DTG_STRING_OUT_OF_MEMORY;
 					m_String = tempHolder;
 				}
 				return *this;
 			}
 
-			BasicSimpleString& Append(const BasicSimpleString* first,
-			const BasicSimpleString* last) {
-				return Append(&first->m_String, &last->m_String);
-			}
-			DTG_SPACESHIP_OPERATOR(TerminatedArrayCompare(m_String, second),
-					value_type(0), pointer second)
+			DTG_SPACESHIP_OPERATOR(pointer second
+				, TerminatedArrayCompare(m_String, second)
+				, value_type(0))
 
-			DTG_SPACESHIP_OPERATOR(TerminatedArrayCompare(m_String, other.m_String),
-					value_type(0), const BasicSimpleString& other)
+			DTG_SPACESHIP_OPERATOR(const BasicSimpleString& other
+				, TerminatedArrayCompare(m_String, other.m_String)
+				, value_type(0))
 
 			operator const_pointer() const noexcept {
 				return m_String;
@@ -172,41 +227,150 @@ namespace dtg {
 				return m_String;
 			}
 
-		private:
-			size_t CalculateAppendSize(void) {
-				return 0;	
+			constexpr void Lose() {
+				m_String = 0;
 			}
+			//If you steal, make sure you lose it (will seg fault otherwise).
+			constexpr void Steal(pointer string, size_t size) {
+				m_String = string;
+				m_Length = size;
+			}
+
+			static constexpr BasicSimpleString StealingConstructor(pointer string, size_t size) {
+				return BasicSimpleString(size, string);
+			}
+
+			~BasicSimpleString() {
+				delete[] m_String;
+			}
+		private:
+			template<class Iterator>
+			size_t CalculateSize(Iterator begin, Iterator end) {
+				size_t size = 0;
+				for (Iterator i = begin; i != end; ++i)
+					size += i->m_Length;
+				return size;
+			}
+			template<class Iterator>
+			inline BasicSimpleString& AppendIterator(Iterator begin,
+			Iterator end, size_t size) {
+				pointer tempHolder = m_String;
+				m_String = new value_type[size + 1];
+				if (m_String) {
+					pointer l;
+					if (tempHolder) {
+						l = TerminatedArrayCopyLast(m_String, tempHolder);
+						delete[] tempHolder;
+					}
+					else
+						l = m_String;
+					for (Iterator i = begin; i != end; ++i)
+						l = TerminatedArrayCopyLast(l, static_cast<const_pointer>(*i));
+					m_String[size] = 0;
+					m_Length = size;
+				}
+				else {
+					m_String = tempHolder;
+				}
+				return *this;
+			}
+
+			inline size_t CalculateAppendSize(void) {
+				return 0;
+			}
+			
 			template<class... Args>
-			size_t CalculateAppendSize(const_pointer string, Args... args) {
+			inline size_t CalculateAppendSize(const_pointer string, Args... args) {
 				return countElems(string) + CalculateAppendSize(args...);
 			}
+			
 			template<class... Args>
-			size_t CalculateAppendSize(const BasicSimpleString& string, Args... args) {
-				return countElems(string.m_String) + CalculateAppendSize(args...);
+			inline size_t CalculateAppendSize(const BasicSimpleString& string, Args... args) {
+				return string.m_Length + CalculateAppendSize(args...);
 			}
-			void AppendRecursively(pointer) {
+			
+			inline void AppendRecursively(pointer) {
 				return;
 			}
+
 			template<class... Args>
-			void AppendRecursively(pointer container,
+			inline void AppendRecursively(pointer container,
 			const BasicSimpleString& string, Args... args) {
 				return AppendRecursively
 				(TerminatedArrayCopyLast(container, string.m_String),
 				args...);
 			}
+
 			template<class... Args>
-			void AppendRecursively(pointer container,
+			inline void AppendRecursively(pointer container,
 			const_pointer string, Args... args) {
 				return AppendRecursively
 				(dtg::TerminatedArrayCopyLast(container, string),
 				args...);
 			}
+
+			bool Reallocate(size_t size) {
+				if (m_Length == size)
+					return 1;
+				delete[] m_String;
+				m_String = new value_type[size + 1];
+				if (!m_String) {
+					m_Length = 0;
+					DTG_STRING_OUT_OF_MEMORY;
+					return 0;
+				}
+				m_Length = size;
+				return 1;
+			}
+
+			//stealing constructor
+			constexpr BasicSimpleString(size_t length, pointer string)
+			: m_Length(length)
+			, m_String(string){}
 		private:
-	
+		size_t m_Length;
 		pointer m_String;
 	};
-	typedef BasicSimpleString<char>		SimpleString;
-	typedef BasicSimpleString<wchar_t>	WSimpleString;
+
+	using SimpleString   = BasicSimpleString<char>;
+	//using SimpleString8  = BasicSimpleString<char8_t>;
+	using SimpleString16 = BasicSimpleString<char16_t>;
+	using SimpleString32 = BasicSimpleString<char32_t>;
+	using WSimpleString  = BasicSimpleString<wchar_t>;
+	namespace detail {
+		template <class String>
+		struct HashSimpleString
+		: public std::__hash_base<size_t, String> {
+			size_t operator()(const String& str) const noexcept {
+				return std::_Hash_impl::hash(str.Get(), str.Length());
+			}
+		};
+	}
+}
+
+namespace std {
+	template<>
+	struct hash<dtg::SimpleString>
+	: public dtg::detail::HashSimpleString<dtg::SimpleString>
+	{};
+/*
+	template<>
+	struct hash<dtg::SimpleString8>
+	: public dtg::detail::HashSimpleString<dtg::SimpleString8>
+	{};
+*/
+	template<>
+	struct hash<dtg::SimpleString16>
+	: public dtg::detail::HashSimpleString<dtg::SimpleString16>
+	{};
+	template<>
+	struct hash<dtg::SimpleString32>
+	: public dtg::detail::HashSimpleString<dtg::SimpleString32>
+	{};
+	template<>
+	struct hash<dtg::WSimpleString>
+	: public dtg::detail::HashSimpleString<dtg::WSimpleString>
+	{};
 }
 
 #undef DTG_DTG_STRING_OUT_OF_MEMORY

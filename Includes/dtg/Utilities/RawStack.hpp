@@ -6,6 +6,8 @@
 #define DTG_RAWSTACK_OVERFLOW throw std::runtime_error("dtg::RawStack overflow.")
 #define DTG_RAWSTACK_LARGETYPE throw std::runtime_error("dtg::RawStack requested type is larger than the stack.")
 
+// NOTE: not tested
+
 namespace dtg {
 
 template <size_t SIZE, class DefaultType>

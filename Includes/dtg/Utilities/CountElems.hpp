@@ -1,6 +1,8 @@
 #ifndef DTG_COUNTELEMS
 #define DTG_COUNTELEMS
 
+#include <cstddef>
+
 namespace dtg {
 
 	template <class T>
@@ -10,9 +12,6 @@ namespace dtg {
 			++it;
 		return it;
 	}
-
-
-
 }
 
 #endif

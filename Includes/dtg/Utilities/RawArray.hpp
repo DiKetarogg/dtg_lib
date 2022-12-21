@@ -1,6 +1,7 @@
 #ifndef DTG_UTILITIES_RAWARRAY
 #define DTG_UTILITIES_RAWARRAY
 #include "PunCast.hpp"
+#include <cstddef>
 
 namespace dtg {
 

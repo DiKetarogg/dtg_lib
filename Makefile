@@ -36,7 +36,7 @@ DEBUG_DIR	=bin
 SRCS_EXT	=.cpp
 OBJS_EXT	=.o
 HEADER_EXT	=.hpp
-CC		=g++-10 -std=c++17 -o2
+CC	        =g++ -std=c++17 -o2
 CFLAGS		=-Wextra -Wall -Werror -Wno-parentheses #-Wno-error=parentheses
 DEBUG_FLAGS	=-g3
 DEBUG_PROGRAM	=gdb --tui
@@ -52,7 +52,7 @@ SimpleStringdeb: $(DEBUG_DIR) $(DEBUG_DIR)/deb_SimpleString.test
 $(SRCS_DIR)/SimpleString.test:
 	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(SRCS_DIR)/SimpleString.cxx -o $(TARGET_DIR)/SimpleString.test
 $(DEBUG_DIR)/deb_SimpleString.test:
-	$(CC) -I$(INCLUDE_DIR) $(CFLAGS)$(DEBUG_FLAGS) $(SRCS_DIR)/SimpleString.cxx -o $(DEBUG_DIR)/deb_SimpleString.test
+	$(CC) -I$(INCLUDE_DIR) $(CFLAGS) $(DEBUG_FLAGS) $(SRCS_DIR)/SimpleString.cxx -o $(DEBUG_DIR)/deb_SimpleString.test
 
 
 
